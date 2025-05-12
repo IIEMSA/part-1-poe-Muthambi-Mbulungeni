@@ -246,6 +246,7 @@ secrets.json
 .env
 .env.*
 
+
 # Ignore test coverage tools
 coverage/
 *.lcov
