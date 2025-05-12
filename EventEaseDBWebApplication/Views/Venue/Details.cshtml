@@ -13,7 +13,6 @@
         <dt>
             @Html.DisplayNameFor(model => model.VenueName)
         </dt>
-
         <dd>
             @Html.DisplayFor(model => model.VenueName)
         </dd>
@@ -21,7 +20,6 @@
         <dt>
             @Html.DisplayNameFor(model => model.Location)
         </dt>
-
         <dd>
             @Html.DisplayFor(model => model.Location)
         </dd>
@@ -29,19 +27,24 @@
         <dt>
             @Html.DisplayNameFor(model => model.Capacity)
         </dt>
-
         <dd>
             @Html.DisplayFor(model => model.Capacity)
         </dd>
 
         <dt>
-            @Html.DisplayNameFor(model => model.ImageUrl)
+            Image
         </dt>
-
         <dd>
-            @Html.DisplayFor(model => model.ImageUrl)
-        </dd>
+            @if (!string.IsNullOrEmpty(Model.ImageUrl))
+            {
+                <img src="@Model.ImageUrl" alt="Venue Image" style="max-width: 300px; max-height: 200px;" />
 
+            }
+            else
+            {
+                <span>No image uploaded.</span>
+            }
+        </dd>
     </dl>
 </div>
 <p>

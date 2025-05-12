@@ -1,7 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.Entity;
+﻿using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using System;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Web;
@@ -12,44 +12,55 @@ namespace EventEaseDBWebApplication.Controllers
 {
     public class VenueController : Controller
     {
-        private EventEaseDB db = new EventEaseDB();
+        private readonly EventEaseDB db = new EventEaseDB();
 
-        // GET: Venue
+        private string GetBlobUrl(HttpPostedFileBase imageFile)
+        {
+            var connectionString = System.Configuration.ConfigurationManager.AppSettings["AzureStorageConnectionString"];
+            var containerName = System.Configuration.ConfigurationManager.AppSettings["AzureBlobContainerName"];
+
+            var blobServiceClient = new BlobServiceClient(connectionString);
+            var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+            containerClient.CreateIfNotExists();
+
+            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
+            var blobClient = containerClient.GetBlobClient(fileName);
+
+            blobClient.Upload(imageFile.InputStream, new BlobHttpHeaders { ContentType = imageFile.ContentType });
+            return blobClient.Uri.ToString();
+        }
+
         public ActionResult Index()
         {
             return View(db.Venues.ToList());
         }
 
-        // GET: Venue/Details/5
         public ActionResult Details(int? id)
         {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            Venue venue = db.Venues.Find(id);
-            if (venue == null)
-            {
-                return HttpNotFound();
-            }
+            if (!id.HasValue) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+
+            var venue = db.Venues.Find(id);
+            if (venue == null) return HttpNotFound();
+
             return View(venue);
         }
 
-        // GET: Venue/Create
         public ActionResult Create()
         {
             return View();
         }
 
-        // POST: Venue/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
-        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "VenueId,VenueName,Location,Capacity,ImageUrl")] Venue venue)
+        public ActionResult Create([Bind(Include = "VenueId,VenueName,Location,Capacity")] Venue venue, HttpPostedFileBase ImageFile)
         {
             if (ModelState.IsValid)
             {
+                if (ImageFile != null && ImageFile.ContentLength > 0)
+                {
+                    venue.ImageUrl = GetBlobUrl(ImageFile);
+                }
+
                 db.Venues.Add(venue);
                 db.SaveChanges();
                 return RedirectToAction("Index");
@@ -58,58 +69,57 @@ namespace EventEaseDBWebApplication.Controllers
             return View(venue);
         }
 
-        // GET: Venue/Edit/5
         public ActionResult Edit(int? id)
         {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            Venue venue = db.Venues.Find(id);
-            if (venue == null)
-            {
-                return HttpNotFound();
-            }
+            if (!id.HasValue) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+
+            var venue = db.Venues.Find(id);
+            if (venue == null) return HttpNotFound();
+
             return View(venue);
         }
 
-        // POST: Venue/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
-        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit([Bind(Include = "VenueId,VenueName,Location,Capacity,ImageUrl")] Venue venue)
+        public ActionResult Edit([Bind(Include = "VenueId,VenueName,Location,Capacity")] Venue venue, HttpPostedFileBase ImageFile)
         {
+            var existingVenue = db.Venues.Find(venue.VenueId);
+            if (existingVenue == null) return HttpNotFound();
+
             if (ModelState.IsValid)
             {
-                db.Entry(venue).State = EntityState.Modified;
+                existingVenue.VenueName = venue.VenueName;
+                existingVenue.Location = venue.Location;
+                existingVenue.Capacity = venue.Capacity;
+
+                if (ImageFile != null && ImageFile.ContentLength > 0)
+                {
+                    existingVenue.ImageUrl = GetBlobUrl(ImageFile);
+                }
+
+                db.Entry(existingVenue).State = System.Data.Entity.EntityState.Modified;
                 db.SaveChanges();
                 return RedirectToAction("Index");
             }
+
             return View(venue);
         }
 
-        // GET: Venue/Delete/5
         public ActionResult Delete(int? id)
         {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            Venue venue = db.Venues.Find(id);
-            if (venue == null)
-            {
-                return HttpNotFound();
-            }
+            if (!id.HasValue) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+
+            var venue = db.Venues.Find(id);
+            if (venue == null) return HttpNotFound();
+
             return View(venue);
         }
 
-        // POST: Venue/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public ActionResult DeleteConfirmed(int id)
         {
-            Venue venue = db.Venues.Find(id);
+            var venue = db.Venues.Find(id);
             db.Venues.Remove(venue);
             db.SaveChanges();
             return RedirectToAction("Index");
@@ -117,10 +127,7 @@ namespace EventEaseDBWebApplication.Controllers
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
-            {
-                db.Dispose();
-            }
+            if (disposing) db.Dispose();
             base.Dispose(disposing);
         }
     }

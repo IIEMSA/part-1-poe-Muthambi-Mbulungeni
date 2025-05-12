@@ -21,31 +21,39 @@
             @Html.DisplayNameFor(model => model.Capacity)
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.ImageUrl)
+            Image
         </th>
         <th></th>
     </tr>
 
-@foreach (var item in Model) {
-    <tr>
-        <td>
-            @Html.DisplayFor(modelItem => item.VenueName)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.Location)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.Capacity)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.ImageUrl)
-        </td>
-        <td>
-            @Html.ActionLink("Edit", "Edit", new { id=item.VenueId }) |
-            @Html.ActionLink("Details", "Details", new { id=item.VenueId }) |
-            @Html.ActionLink("Delete", "Delete", new { id=item.VenueId })
-        </td>
-    </tr>
-}
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.VenueName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Location)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Capacity)
+            </td>
+            <td>
+                @if (!string.IsNullOrEmpty(item.ImageUrl))
+                {
+                    <img src="@item.ImageUrl" alt="Venue Image" style="max-height: 80px;" />
 
+                }
+                else
+                {
+                    <span>No image</span>
+                }
+            </td>
+            <td>
+                @Html.ActionLink("Edit", "Edit", new { id = item.VenueId }) |
+                @Html.ActionLink("Details", "Details", new { id = item.VenueId }) |
+                @Html.ActionLink("Delete", "Delete", new { id = item.VenueId })
+            </td>
+        </tr>
+    }
 </table>
