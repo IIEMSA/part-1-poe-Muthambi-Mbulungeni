@@ -4,6 +4,13 @@
     ViewBag.Title = "Create";
 }
 
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
 <h2>Create</h2>
 
 @using (Html.BeginForm("Create", "Venue", FormMethod.Post, new { enctype = "multipart/form-data" }))
@@ -43,7 +50,7 @@
             </div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group form-actions">
             <div class="col-md-offset-2 col-md-10">
                 <input type="submit" value="Create" class="btn btn-primary" />
             </div>

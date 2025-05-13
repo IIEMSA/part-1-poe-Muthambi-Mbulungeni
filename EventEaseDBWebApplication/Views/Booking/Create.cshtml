@@ -13,6 +13,13 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 }
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
 
 @using (Html.BeginForm(null, null, FormMethod.Post, new { onsubmit = "return confirmCreate();" }))
 {
@@ -23,6 +30,7 @@
         <hr />
         @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
+        <!-- Event Dropdown -->
         <div class="form-group">
             @Html.LabelFor(model => model.EventId, "EventId", htmlAttributes: new { @class = "control-label col-md-2" })
             <div class="col-md-10">
@@ -31,6 +39,7 @@
             </div>
         </div>
 
+        <!-- Venue Dropdown -->
         <div class="form-group">
             @Html.LabelFor(model => model.VenueId, "VenueId", htmlAttributes: new { @class = "control-label col-md-2" })
             <div class="col-md-10">
@@ -39,6 +48,7 @@
             </div>
         </div>
 
+        <!-- Booking Date -->
         <div class="form-group">
             @Html.LabelFor(model => model.BookingDate, htmlAttributes: new { @class = "control-label col-md-2" })
             <div class="col-md-10">
@@ -47,7 +57,7 @@
             </div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group mt-3">
             <div class="col-md-offset-2 col-md-10">
                 <input type="submit" value="Create" class="btn btn-primary" />
             </div>

@@ -1,51 +1,73 @@
 ﻿@model IEnumerable<EventEaseDBWebApplication.Models.Event>
 
 @{
-    ViewBag.Title = "Index";
+    ViewBag.Title = "Events";
 }
 
-<h2>Index</h2>
+<h2>Events</h2>
+
+<!-- SUCCESS / ERROR MESSAGES -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success" role="alert">
+        @TempData["SuccessMessage"]
+    </div>
+}
+@if (TempData["DeleteError"] != null)
+{
+    <div class="alert alert-danger" role="alert">
+        @TempData["DeleteError"]
+    </div>
+}
+
+<!-- SEARCH FORM -->
+@using (Html.BeginForm("Index", "Event", FormMethod.Get))
+{
+    <div class="form-group">
+        <div class="input-group">
+            @Html.TextBox("searchTerm", ViewBag.CurrentFilter as string, new { @class = "form-control", placeholder = "Search by event name or date..." })
+            <span class="input-group-btn">
+                <button class="btn btn-primary" type="submit">Search</button>
+            </span>
+        </div>
+    </div>
+}
 
 <p>
-    @Html.ActionLink("Create New", "Create")
+    @Html.ActionLink("Create New Event", "Create", null, new { @class = "btn btn-success" })
 </p>
-<table class="table">
-    <tr>
-        <th>
-            @Html.DisplayNameFor(model => model.Venue.VenueName)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.EventName)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.EventDate)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Description)
-        </th>
-        <th></th>
-    </tr>
 
-@foreach (var item in Model) {
-    <tr>
-        <td>
-            @Html.DisplayFor(modelItem => item.Venue.VenueName)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.EventName)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.EventDate)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.Description)
-        </td>
-        <td>
-            @Html.ActionLink("Edit", "Edit", new { id=item.EventId }) |
-            @Html.ActionLink("Details", "Details", new { id=item.EventId }) |
-            @Html.ActionLink("Delete", "Delete", new { id=item.EventId })
-        </td>
-    </tr>
+@if (Model != null && Model.Any())
+{
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().Venue.VenueName)</th>
+                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().EventName)</th>
+                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().EventDate)</th>
+                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().Description)</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@Html.DisplayFor(modelItem => item.Venue.VenueName)</td>
+                    <td>@Html.DisplayFor(modelItem => item.EventName)</td>
+                    <td>@(item.EventDate.HasValue ? item.EventDate.Value.ToString("yyyy-MM-dd") : "")</td>
+                    <td>@Html.DisplayFor(modelItem => item.Description)</td>
+                    <td>
+                        @Html.ActionLink("Edit", "Edit", new { id = item.EventId }, new { @class = "btn btn-sm btn-warning" }) |
+                        @Html.ActionLink("Details", "Details", new { id = item.EventId }, new { @class = "btn btn-sm btn-info" }) |
+                        @Html.ActionLink("Delete", "Delete", new { id = item.EventId }, new { @class = "btn btn-sm btn-danger" })
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 }
-
-</table>
+else
+{
+    <p>No events found.</p>
+}

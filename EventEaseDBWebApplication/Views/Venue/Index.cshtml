@@ -1,59 +1,77 @@
 ﻿@model IEnumerable<EventEaseDBWebApplication.Models.Venue>
 
 @{
-    ViewBag.Title = "Index";
+    ViewBag.Title = "Venues";
 }
 
-<h2>Index</h2>
+<h2>Venues</h2>
+
+<!-- SUCCESS / ERROR MESSAGES -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success" role="alert">
+        @TempData["SuccessMessage"]
+    </div>
+}
+@if (TempData["DeleteError"] != null)
+{
+    <div class="alert alert-danger" role="alert">
+        @TempData["DeleteError"]
+    </div>
+}
 
 <p>
-    @Html.ActionLink("Create New", "Create")
+    @Html.ActionLink("Create New Venue", "Create", null, new { @class = "btn btn-success" })
 </p>
-<table class="table">
-    <tr>
-        <th>
-            @Html.DisplayNameFor(model => model.VenueName)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Location)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Capacity)
-        </th>
-        <th>
-            Image
-        </th>
-        <th></th>
-    </tr>
 
-    @foreach (var item in Model)
-    {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.VenueName)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Location)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Capacity)
-            </td>
-            <td>
-                @if (!string.IsNullOrEmpty(item.ImageUrl))
-                {
-                    <img src="@item.ImageUrl" alt="Venue Image" style="max-height: 80px;" />
+@using (Html.BeginForm("Index", "Venue", FormMethod.Get))
+{
+    <div class="form-group">
+        <input type="text" name="searchTerm" class="form-control" placeholder="Search by name or location" value="@ViewBag.CurrentFilter" />
+        <button type="submit" class="btn btn-primary" style="margin-top: 5px;">Search</button>
+    </div>
+}
 
-                }
-                else
-                {
-                    <span>No image</span>
-                }
-            </td>
-            <td>
-                @Html.ActionLink("Edit", "Edit", new { id = item.VenueId }) |
-                @Html.ActionLink("Details", "Details", new { id = item.VenueId }) |
-                @Html.ActionLink("Delete", "Delete", new { id = item.VenueId })
-            </td>
-        </tr>
-    }
-</table>
+@if (Model != null && Model.Any())
+{
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().VenueName)</th>
+                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().Location)</th>
+                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().Capacity)</th>
+                <th>Image</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@Html.DisplayFor(modelItem => item.VenueName)</td>
+                    <td>@Html.DisplayFor(modelItem => item.Location)</td>
+                    <td>@Html.DisplayFor(modelItem => item.Capacity)</td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(item.ImageUrl))
+                        {
+                            <img src="@item.ImageUrl" alt="Venue Image" class="img-thumbnail" style="max-height: 80px;" />
+                        }
+                        else
+                        {
+                            <span class="text-muted">No image</span>
+                        }
+                    </td>
+                    <td>
+                        @Html.ActionLink("Edit", "Edit", new { id = item.VenueId }, new { @class = "btn btn-sm btn-warning" }) |
+                        @Html.ActionLink("Details", "Details", new { id = item.VenueId }, new { @class = "btn btn-sm btn-info" }) |
+                        @Html.ActionLink("Delete", "Delete", new { id = item.VenueId }, new { @class = "btn btn-sm btn-danger" })
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No venues found.</p>
+}
