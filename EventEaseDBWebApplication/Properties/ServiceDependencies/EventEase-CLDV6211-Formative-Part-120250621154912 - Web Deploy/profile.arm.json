@@ -21,7 +21,7 @@
     },
     "resourceName": {
       "type": "string",
-      "defaultValue": "EventEase-CLDV6211-Formative-Part-1",
+      "defaultValue": "EventEase-CLDV6211-Formative-Part-120250621154912",
       "metadata": {
         "description": "Name of the main resource to be created by this template."
       }

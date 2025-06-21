@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.12.35707.178 d17.12
+VisualStudioVersion = 17.12.35707.178
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventEaseDBWebApplication", "EventEaseDBWebApplication.csproj", "{3A8677F6-C2D5-489F-8EAB-61CA19C1977E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventEase-CLDV6211-Formative-Part-1", "EventEase-CLDV6211-Formative-Part-1.csproj", "{3A8677F6-C2D5-489F-8EAB-61CA19C1977E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
