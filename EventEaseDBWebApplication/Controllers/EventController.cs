@@ -14,7 +14,7 @@ namespace EventEaseDBWebApplication.Controllers
         // GET: Event
         public ActionResult Index(string searchTerm)
         {
-            var events = db.Events.Include(e => e.Venue);
+            var events = db.Events.Include(e => e.Venue).Include(e => e.EventType);
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
@@ -23,7 +23,8 @@ namespace EventEaseDBWebApplication.Controllers
                     e.EventName.ToLower().Contains(searchTerm) ||
                     (e.Description ?? "").ToLower().Contains(searchTerm) ||
                     e.EventDate.ToString().Contains(searchTerm) ||
-                    e.Venue.VenueName.ToLower().Contains(searchTerm));
+                    e.Venue.VenueName.ToLower().Contains(searchTerm) ||
+                    e.EventType.Name.ToLower().Contains(searchTerm));
             }
 
             ViewBag.CurrentFilter = searchTerm;
@@ -35,7 +36,11 @@ namespace EventEaseDBWebApplication.Controllers
         {
             if (!id.HasValue) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
 
-            var @event = db.Events.Include(e => e.Venue).FirstOrDefault(e => e.EventId == id);
+            var @event = db.Events
+                .Include(e => e.Venue)
+                .Include(e => e.EventType)
+                .FirstOrDefault(e => e.EventId == id);
+
             if (@event == null) return HttpNotFound();
 
             return View(@event);
@@ -45,32 +50,42 @@ namespace EventEaseDBWebApplication.Controllers
         public ActionResult Create()
         {
             PopulateVenueSelectList();
+            PopulateEventTypeSelectList();
             return View(new Event { EventDate = DateTime.Today });
         }
 
         // POST: Event/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "EventId,EventName,EventDate,Description,VenueId")] Event @event)
+        public ActionResult Create([Bind(Include = "EventId,EventName,EventDate,Description,VenueId,EventTypeId")] Event @event)
         {
             try
             {
                 if (ModelState.IsValid)
                 {
-                    bool isDuplicate = db.Events.Any(e =>
-                        e.EventName == @event.EventName &&
-                        DbFunctions.TruncateTime(e.EventDate) == DbFunctions.TruncateTime(@event.EventDate));
-
-                    if (isDuplicate)
+                    // Prevent past date events
+                    if (@event.EventDate < DateTime.Today)
                     {
-                        ModelState.AddModelError("", "An event with the same name and date already exists.");
+                        ModelState.AddModelError("EventDate", "Event date cannot be in the past.");
                     }
                     else
                     {
-                        db.Events.Add(@event);
-                        db.SaveChanges();
-                        TempData["SuccessMessage"] = "Event created successfully.";
-                        return RedirectToAction("Index");
+                        // Check for duplicate event
+                        bool isDuplicate = db.Events.Any(e =>
+                            e.EventName == @event.EventName &&
+                            DbFunctions.TruncateTime(e.EventDate) == DbFunctions.TruncateTime(@event.EventDate));
+
+                        if (isDuplicate)
+                        {
+                            ModelState.AddModelError("", "An event with the same name and date already exists.");
+                        }
+                        else
+                        {
+                            db.Events.Add(@event);
+                            db.SaveChanges();
+                            TempData["SuccessMessage"] = "Event created successfully.";
+                            return RedirectToAction("Index");
+                        }
                     }
                 }
             }
@@ -80,6 +95,7 @@ namespace EventEaseDBWebApplication.Controllers
             }
 
             PopulateVenueSelectList(@event.VenueId);
+            PopulateEventTypeSelectList(@event.EventTypeId);
             return View(@event);
         }
 
@@ -94,34 +110,43 @@ namespace EventEaseDBWebApplication.Controllers
                 return HttpNotFound();
 
             PopulateVenueSelectList(@event.VenueId);
+            PopulateEventTypeSelectList(@event.EventTypeId);
             return View(@event);
         }
 
         // POST: Event/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit([Bind(Include = "EventId,EventName,EventDate,Description,VenueId")] Event @event)
+        public ActionResult Edit([Bind(Include = "EventId,EventName,EventDate,Description,VenueId,EventTypeId")] Event @event)
         {
             try
             {
                 if (ModelState.IsValid)
                 {
-                    // Check if another event with same name and date exists (except current event)
-                    bool isDuplicate = db.Events.Any(e =>
-                        e.EventId != @event.EventId &&
-                        e.EventName == @event.EventName &&
-                        DbFunctions.TruncateTime(e.EventDate) == DbFunctions.TruncateTime(@event.EventDate));
-
-                    if (isDuplicate)
+                    // Prevent past date events
+                    if (@event.EventDate < DateTime.Today)
                     {
-                        ModelState.AddModelError("", "Another event with the same name and date already exists.");
+                        ModelState.AddModelError("EventDate", "Event date cannot be in the past.");
                     }
                     else
                     {
-                        db.Entry(@event).State = EntityState.Modified;
-                        db.SaveChanges();
-                        TempData["SuccessMessage"] = "Event updated successfully.";
-                        return RedirectToAction("Index");
+                        // Check for duplicate event (excluding current)
+                        bool isDuplicate = db.Events.Any(e =>
+                            e.EventId != @event.EventId &&
+                            e.EventName == @event.EventName &&
+                            DbFunctions.TruncateTime(e.EventDate) == DbFunctions.TruncateTime(@event.EventDate));
+
+                        if (isDuplicate)
+                        {
+                            ModelState.AddModelError("", "Another event with the same name and date already exists.");
+                        }
+                        else
+                        {
+                            db.Entry(@event).State = EntityState.Modified;
+                            db.SaveChanges();
+                            TempData["SuccessMessage"] = "Event updated successfully.";
+                            return RedirectToAction("Index");
+                        }
                     }
                 }
             }
@@ -131,6 +156,7 @@ namespace EventEaseDBWebApplication.Controllers
             }
 
             PopulateVenueSelectList(@event.VenueId);
+            PopulateEventTypeSelectList(@event.EventTypeId);
             return View(@event);
         }
 
@@ -139,7 +165,11 @@ namespace EventEaseDBWebApplication.Controllers
         {
             if (!id.HasValue) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
 
-            var @event = db.Events.Include(e => e.Venue).FirstOrDefault(e => e.EventId == id);
+            var @event = db.Events
+                .Include(e => e.Venue)
+                .Include(e => e.EventType)
+                .FirstOrDefault(e => e.EventId == id);
+
             if (@event == null) return HttpNotFound();
 
             return View(@event);
@@ -170,7 +200,6 @@ namespace EventEaseDBWebApplication.Controllers
                 // Safe to delete since no bookings
                 db.Events.Remove(@event);
                 db.SaveChanges();
-
                 TempData["SuccessMessage"] = "Event deleted successfully.";
                 return RedirectToAction("Index");
             }
@@ -184,6 +213,11 @@ namespace EventEaseDBWebApplication.Controllers
         private void PopulateVenueSelectList(int? selectedVenueId = null)
         {
             ViewBag.VenueId = new SelectList(db.Venues, "VenueId", "VenueName", selectedVenueId);
+        }
+
+        private void PopulateEventTypeSelectList(int? selectedEventTypeId = null)
+        {
+            ViewBag.EventTypeId = new SelectList(db.EventTypes, "EventTypeId", "Name", selectedEventTypeId);
         }
 
         protected override void Dispose(bool disposing)
