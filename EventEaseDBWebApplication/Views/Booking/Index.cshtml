@@ -6,23 +6,19 @@
 
 <h2>Bookings</h2>
 
-<!-- SUCCESS / ERROR MESSAGES -->
 @if (TempData["SuccessMessage"] != null)
 {
-    <div class="alert alert-success alert-dismissible" role="alert">
+    <div class="alert alert-success alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
         @TempData["SuccessMessage"]
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-        </button>
     </div>
 }
+
 @if (TempData["DeleteError"] != null)
 {
-    <div class="alert alert-danger alert-dismissible" role="alert">
+    <div class="alert alert-danger alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
         @TempData["DeleteError"]
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-        </button>
     </div>
 }
 
@@ -30,18 +26,63 @@
     @Html.ActionLink("Create New Booking", "Create", null, new { @class = "btn btn-success" })
 </p>
 
-<!-- SEARCH FORM -->
+<!-- Advanced Filters -->
 @using (Html.BeginForm("Index", "Booking", FormMethod.Get))
 {
-    <div class="form-group">
-        <div class="input-group">
-            <input type="text" name="searchTerm" class="form-control" placeholder="Search by booking ID or event name..." value="@ViewBag.CurrentFilter" />
-            <div class="input-group-append">
-                <button type="submit" class="btn btn-primary">Search</button>
-                @if (!string.IsNullOrEmpty(ViewBag.CurrentFilter))
-                {
-                    @Html.ActionLink("Clear", "Index", null, new { @class = "btn btn-secondary" })
-                }
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Advanced Filters</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Search</label>
+                        <input type="text" name="searchTerm" class="form-control"
+                               value="@ViewBag.CurrentFilter" placeholder="ID, Event, Venue...">
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Event Type</label>
+                        @Html.DropDownList("eventTypeId", (SelectList)ViewBag.EventTypeId,
+                            "All Types", new { @class = "form-control" })
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Date Range</label>
+                        <div class="input-group">
+                            <input type="date" name="startDate" class="form-control"
+                                   value="@ViewBag.StartDate">
+                            <span class="input-group-text">to</span>
+                            <input type="date" name="endDate" class="form-control"
+                                   value="@ViewBag.EndDate">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <div class="form-check mt-4">
+                            <input type="checkbox" name="availableOnly" class="form-check-input"
+                                   id="availableOnly" value="true"
+                                   @(ViewBag.AvailableOnly == true ? "checked" : "")>
+                            <label class="form-check-label" for="availableOnly">
+                                Available Venues Only
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">Apply Filters</button>
+                        <a href="@Url.Action("Index")" class="btn btn-secondary">Clear Filters</a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -49,13 +90,15 @@
 
 @if (Model != null && Model.Any())
 {
-    <table class="table table-bordered table-striped">
+    <table class="table table-striped table-bordered">
         <thead>
             <tr>
                 <th>Booking ID</th>
                 <th>Event Name</th>
+                <th>Event Type</th>
                 <th>Venue Name</th>
                 <th>Booking Date</th>
+                <th>Venue Status</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -63,13 +106,24 @@
             @foreach (var item in Model)
             {
                 <tr>
-                    <td>@Html.DisplayFor(modelItem => item.BookingId)</td>
-                    <td>@Html.DisplayFor(modelItem => item.Event.EventName)</td>
-                    <td>@Html.DisplayFor(modelItem => item.Venue.VenueName)</td>
+                    <td>@item.BookingId</td>
+                    <td>@item.Event.EventName</td>
+                    <td>@(item.Event.EventType?.Name ?? "N/A")</td>
+                    <td>@item.Venue.VenueName</td>
                     <td>@item.BookingDate.ToString("yyyy-MM-dd")</td>
                     <td>
-                        @Html.ActionLink("Edit", "Edit", new { id = item.BookingId }, new { @class = "btn btn-sm btn-warning" }) |
-                        @Html.ActionLink("Details", "Details", new { id = item.BookingId }, new { @class = "btn btn-sm btn-info" }) |
+                        @if (item.Venue.IsAvailable)
+                        {
+                            <span class="badge bg-success">Available</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">Unavailable</span>
+                        }
+                    </td>
+                    <td>
+                        @Html.ActionLink("Edit", "Edit", new { id = item.BookingId }, new { @class = "btn btn-sm btn-warning" })
+                        @Html.ActionLink("Details", "Details", new { id = item.BookingId }, new { @class = "btn btn-sm btn-info" })
                         @Html.ActionLink("Delete", "Delete", new { id = item.BookingId }, new { @class = "btn btn-sm btn-danger" })
                     </td>
                 </tr>
@@ -82,11 +136,11 @@ else
     <div class="alert alert-info">
         @if (!string.IsNullOrEmpty(ViewBag.CurrentFilter))
         {
-            <p>No bookings found matching "@ViewBag.CurrentFilter".</p>
+            <p>No bookings found matching your search criteria.</p>
         }
         else
         {
-            <p>No bookings found.</p>
+            <p>No bookings available.</p>
         }
     </div>
 }

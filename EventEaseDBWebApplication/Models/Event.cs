@@ -32,8 +32,14 @@ namespace EventEaseDBWebApplication.Models
         [Required]
         public int VenueId { get; set; }
 
+        [Required]
+        public int EventTypeId { get; set; } // New property
+
         [ForeignKey("VenueId")]
         public virtual Venue Venue { get; set; }
+
+        [ForeignKey("EventTypeId")]
+        public virtual EventType EventType { get; set; } // New relationship
 
         public virtual ICollection<Booking> Bookings { get; set; }
     }

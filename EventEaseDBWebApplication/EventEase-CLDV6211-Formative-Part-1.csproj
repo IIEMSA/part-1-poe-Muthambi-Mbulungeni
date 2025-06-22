@@ -245,6 +245,7 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="Controllers\BookingController.cs" />
     <Compile Include="Controllers\EventController.cs" />
+    <Compile Include="Controllers\EventTypeController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\VenueController.cs" />
     <Compile Include="Global.asax.cs">
@@ -253,6 +254,7 @@
     <Compile Include="Models\Booking.cs" />
     <Compile Include="Models\Event.cs" />
     <Compile Include="Models\EventEaseDB.cs" />
+    <Compile Include="Models\EventType.cs" />
     <Compile Include="Models\Venue.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -324,9 +326,15 @@
     <Content Include="Views\Venue\Details.cshtml" />
     <Content Include="Views\Venue\Edit.cshtml" />
     <Content Include="Views\Venue\Index.cshtml" />
+    <Content Include="Views\EventType\Index.cshtml" />
+    <Content Include="Views\EventType\Create.cshtml" />
+    <Content Include="Views\EventType\Edit.cshtml" />
+    <Content Include="Views\EventType\Details.cshtml" />
+    <Content Include="Views\EventType\Delete.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
+    <Folder Include="Views\NewFolder1\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap.rtl.min.css.map" />

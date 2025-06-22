@@ -13,7 +13,7 @@ namespace EventEaseDBWebApplication.Models
         {
             Bookings = new HashSet<Booking>();
             Events = new HashSet<Event>();
-            Capacity = 1; // Default value
+            Capacity = 1;
         }
 
         [Key]
@@ -29,7 +29,10 @@ namespace EventEaseDBWebApplication.Models
 
         [Required(ErrorMessage = "Capacity is required.")]
         [Range(1, int.MaxValue, ErrorMessage = "Capacity must be greater than 0.")]
-        public int Capacity { get; set; } = 1; // Default value
+        public int Capacity { get; set; } = 1;
+
+        [Display(Name = "Available")]
+        public bool IsAvailable { get; set; } = true; // New property
 
         [StringLength(255)]
         public string ImageUrl { get; set; }
