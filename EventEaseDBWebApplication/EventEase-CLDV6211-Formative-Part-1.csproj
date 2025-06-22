@@ -286,6 +286,7 @@
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
     <None Include="Properties\PublishProfiles\EventEase-CLDV6211-Formative-Part-120250621154912 - Web Deploy.pubxml" />
+    <None Include="Properties\PublishProfiles\EventEaseDB - Web Deploy.pubxml" />
     <None Include="Scripts\jquery-3.7.0.intellisense.js" />
     <Content Include="Scripts\jquery-3.7.0.js" />
     <Content Include="Scripts\jquery-3.7.0.min.js" />
