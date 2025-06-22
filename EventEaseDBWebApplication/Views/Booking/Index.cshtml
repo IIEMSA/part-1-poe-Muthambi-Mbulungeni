@@ -6,34 +6,23 @@
 
 <h2>Bookings</h2>
 
+<!-- SUCCESS / ERROR MESSAGES -->
 @if (TempData["SuccessMessage"] != null)
 {
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
+    <div class="alert alert-success alert-dismissible" role="alert">
         @TempData["SuccessMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
     </div>
 }
 @if (TempData["DeleteError"] != null)
 {
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <div class="alert alert-danger alert-dismissible" role="alert">
         @TempData["DeleteError"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
-
-<!-- SEARCH BAR -->
-@using (Html.BeginForm("Index", "Booking", FormMethod.Get))
-{
-    <div class="form-inline mb-3">
-        <label for="searchTerm">Search by Booking ID or Event Name:</label>
-        @Html.TextBox("searchTerm", ViewBag.CurrentFilter as string, new
-        {
-            @class = "form-control mx-2",
-            @placeholder = "Enter Booking ID or Event Name",
-            style = "max-width:300px;"
-        })
-        <input type="submit" value="Search" class="btn btn-primary" />
-        @Html.ActionLink("Clear", "Index", null, new { @class = "btn btn-secondary ml-2" })
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
     </div>
 }
 
@@ -41,14 +30,32 @@
     @Html.ActionLink("Create New Booking", "Create", null, new { @class = "btn btn-success" })
 </p>
 
+<!-- SEARCH FORM -->
+@using (Html.BeginForm("Index", "Booking", FormMethod.Get))
+{
+    <div class="form-group">
+        <div class="input-group">
+            <input type="text" name="searchTerm" class="form-control" placeholder="Search by booking ID or event name..." value="@ViewBag.CurrentFilter" />
+            <div class="input-group-append">
+                <button type="submit" class="btn btn-primary">Search</button>
+                @if (!string.IsNullOrEmpty(ViewBag.CurrentFilter))
+                {
+                    @Html.ActionLink("Clear", "Index", null, new { @class = "btn btn-secondary" })
+                }
+            </div>
+        </div>
+    </div>
+}
+
 @if (Model != null && Model.Any())
 {
     <table class="table table-bordered table-striped">
         <thead>
             <tr>
-                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().Event.EventName)</th>
-                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().Venue.VenueName)</th>
-                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().BookingDate)</th>
+                <th>Booking ID</th>
+                <th>Event Name</th>
+                <th>Venue Name</th>
+                <th>Booking Date</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -56,9 +63,10 @@
             @foreach (var item in Model)
             {
                 <tr>
+                    <td>@Html.DisplayFor(modelItem => item.BookingId)</td>
                     <td>@Html.DisplayFor(modelItem => item.Event.EventName)</td>
                     <td>@Html.DisplayFor(modelItem => item.Venue.VenueName)</td>
-                    <td>@(item.BookingDate.HasValue ? item.BookingDate.Value.ToString("yyyy-MM-dd") : "")</td>
+                    <td>@item.BookingDate.ToString("yyyy-MM-dd")</td>
                     <td>
                         @Html.ActionLink("Edit", "Edit", new { id = item.BookingId }, new { @class = "btn btn-sm btn-warning" }) |
                         @Html.ActionLink("Details", "Details", new { id = item.BookingId }, new { @class = "btn btn-sm btn-info" }) |
@@ -71,5 +79,14 @@
 }
 else
 {
-    <p>No bookings found.</p>
+    <div class="alert alert-info">
+        @if (!string.IsNullOrEmpty(ViewBag.CurrentFilter))
+        {
+            <p>No bookings found matching "@ViewBag.CurrentFilter".</p>
+        }
+        else
+        {
+            <p>No bookings found.</p>
+        }
+    </div>
 }

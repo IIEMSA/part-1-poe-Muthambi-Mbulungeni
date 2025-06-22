@@ -9,27 +9,20 @@
 <!-- SUCCESS / ERROR MESSAGES -->
 @if (TempData["SuccessMessage"] != null)
 {
-    <div class="alert alert-success" role="alert">
+    <div class="alert alert-success alert-dismissible" role="alert">
         @TempData["SuccessMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
     </div>
 }
 @if (TempData["DeleteError"] != null)
 {
-    <div class="alert alert-danger" role="alert">
+    <div class="alert alert-danger alert-dismissible" role="alert">
         @TempData["DeleteError"]
-    </div>
-}
-
-<!-- SEARCH FORM -->
-@using (Html.BeginForm("Index", "Event", FormMethod.Get))
-{
-    <div class="form-group">
-        <div class="input-group">
-            @Html.TextBox("searchTerm", ViewBag.CurrentFilter as string, new { @class = "form-control", placeholder = "Search by event name or date..." })
-            <span class="input-group-btn">
-                <button class="btn btn-primary" type="submit">Search</button>
-            </span>
-        </div>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
     </div>
 }
 
@@ -37,15 +30,32 @@
     @Html.ActionLink("Create New Event", "Create", null, new { @class = "btn btn-success" })
 </p>
 
+<!-- SEARCH FORM -->
+@using (Html.BeginForm("Index", "Event", FormMethod.Get))
+{
+    <div class="form-group">
+        <div class="input-group">
+            <input type="text" name="searchTerm" class="form-control" placeholder="Search by event name, description, date, or venue..." value="@ViewBag.CurrentFilter" />
+            <div class="input-group-append">
+                <button type="submit" class="btn btn-primary">Search</button>
+                @if (!string.IsNullOrEmpty(ViewBag.CurrentFilter))
+                {
+                    @Html.ActionLink("Clear", "Index", null, new { @class = "btn btn-secondary" })
+                }
+            </div>
+        </div>
+    </div>
+}
+
 @if (Model != null && Model.Any())
 {
     <table class="table table-bordered table-striped">
         <thead>
             <tr>
-                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().Venue.VenueName)</th>
-                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().EventName)</th>
-                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().EventDate)</th>
-                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().Description)</th>
+                <th>Event Name</th>
+                <th>Event Date</th>
+                <th>Venue Name</th>
+                <th>Description</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -53,9 +63,9 @@
             @foreach (var item in Model)
             {
                 <tr>
-                    <td>@Html.DisplayFor(modelItem => item.Venue.VenueName)</td>
                     <td>@Html.DisplayFor(modelItem => item.EventName)</td>
-                    <td>@(item.EventDate.HasValue ? item.EventDate.Value.ToString("yyyy-MM-dd") : "")</td>
+                    <td>@item.EventDate.ToString("yyyy-MM-dd")</td>
+                    <td>@Html.DisplayFor(modelItem => item.Venue.VenueName)</td>
                     <td>@Html.DisplayFor(modelItem => item.Description)</td>
                     <td>
                         @Html.ActionLink("Edit", "Edit", new { id = item.EventId }, new { @class = "btn btn-sm btn-warning" }) |
@@ -69,5 +79,14 @@
 }
 else
 {
-    <p>No events found.</p>
+    <div class="alert alert-info">
+        @if (!string.IsNullOrEmpty(ViewBag.CurrentFilter))
+        {
+            <p>No events found matching "@ViewBag.CurrentFilter".</p>
+        }
+        else
+        {
+            <p>No events found.</p>
+        }
+    </div>
 }

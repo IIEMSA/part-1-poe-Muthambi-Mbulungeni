@@ -1,6 +1,4 @@
-﻿using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
-using System;
+﻿using System;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.IO;
@@ -8,6 +6,8 @@ using System.Linq;
 using System.Net;
 using System.Web;
 using System.Web.Mvc;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using EventEaseDBWebApplication.Models;
 
 namespace EventEaseDBWebApplication.Controllers
@@ -20,6 +20,12 @@ namespace EventEaseDBWebApplication.Controllers
         {
             var connectionString = System.Configuration.ConfigurationManager.AppSettings["AzureStorageConnectionString"];
             var containerName = System.Configuration.ConfigurationManager.AppSettings["AzureBlobContainerName"];
+
+            // Handle missing configuration
+            if (string.IsNullOrEmpty(connectionString) || string.IsNullOrEmpty(containerName))
+            {
+                throw new ApplicationException("Azure storage configuration is missing");
+            }
 
             var blobServiceClient = new BlobServiceClient(connectionString);
             var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
@@ -39,9 +45,11 @@ namespace EventEaseDBWebApplication.Controllers
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
+                searchTerm = searchTerm.ToLower();
                 venues = venues.Where(v =>
-                    v.VenueName.Contains(searchTerm) ||
-                    v.Location.Contains(searchTerm));
+                    v.VenueName.ToLower().Contains(searchTerm) ||
+                    v.Location.ToLower().Contains(searchTerm) ||
+                    v.Capacity.ToString().Contains(searchTerm));
             }
 
             ViewBag.CurrentFilter = searchTerm;
@@ -51,10 +59,16 @@ namespace EventEaseDBWebApplication.Controllers
         // GET: Venue/Details/5
         public ActionResult Details(int? id)
         {
-            if (!id.HasValue) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            if (!id.HasValue)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
 
-            var venue = db.Venues.Find(id);
-            if (venue == null) return HttpNotFound();
+            Venue venue = db.Venues.Find(id);
+            if (venue == null)
+            {
+                return HttpNotFound();
+            }
 
             return View(venue);
         }
@@ -62,7 +76,7 @@ namespace EventEaseDBWebApplication.Controllers
         // GET: Venue/Create
         public ActionResult Create()
         {
-            return View();
+            return View(new Venue());
         }
 
         // POST: Venue/Create
@@ -70,28 +84,39 @@ namespace EventEaseDBWebApplication.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult Create([Bind(Include = "VenueId,VenueName,Location,Capacity")] Venue venue, HttpPostedFileBase ImageFile)
         {
-            if (ModelState.IsValid)
+            try
             {
-                bool isDuplicate = db.Venues.Any(v =>
-                    v.VenueName == venue.VenueName &&
-                    v.Location == venue.Location);
+                if (ModelState.IsValid)
+                {
+                    bool isDuplicate = db.Venues.Any(v =>
+                        v.VenueName == venue.VenueName &&
+                        v.Location == venue.Location);
 
-                if (isDuplicate)
-                {
-                    ModelState.AddModelError("", "A venue with the same name and location already exists.");
-                }
-                else
-                {
-                    if (ImageFile != null && ImageFile.ContentLength > 0)
+                    if (isDuplicate)
                     {
-                        venue.ImageUrl = GetBlobUrl(ImageFile);
+                        ModelState.AddModelError("", "A venue with the same name and location already exists.");
                     }
+                    else
+                    {
+                        if (ImageFile != null && ImageFile.ContentLength > 0)
+                        {
+                            venue.ImageUrl = GetBlobUrl(ImageFile);
+                        }
+                        else
+                        {
+                            venue.ImageUrl = null;
+                        }
 
-                    db.Venues.Add(venue);
-                    db.SaveChanges();
-                    TempData["SuccessMessage"] = "Venue created successfully.";
-                    return RedirectToAction("Index");
+                        db.Venues.Add(venue);
+                        db.SaveChanges();
+                        TempData["SuccessMessage"] = "Venue created successfully.";
+                        return RedirectToAction("Index");
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "Error creating venue: " + ex.Message);
             }
 
             return View(venue);
@@ -100,10 +125,12 @@ namespace EventEaseDBWebApplication.Controllers
         // GET: Venue/Edit/5
         public ActionResult Edit(int? id)
         {
-            if (!id.HasValue) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            if (id == null)
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
 
             var venue = db.Venues.Find(id);
-            if (venue == null) return HttpNotFound();
+            if (venue == null)
+                return HttpNotFound();
 
             return View(venue);
         }
@@ -111,38 +138,40 @@ namespace EventEaseDBWebApplication.Controllers
         // POST: Venue/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit([Bind(Include = "VenueId,VenueName,Location,Capacity")] Venue venue, HttpPostedFileBase ImageFile)
+        public ActionResult Edit([Bind(Include = "VenueId,VenueName,Location,Capacity,ImageUrl")] Venue venue, HttpPostedFileBase ImageFile)
         {
-            var existingVenue = db.Venues.Find(venue.VenueId);
-            if (existingVenue == null) return HttpNotFound();
-
-            if (ModelState.IsValid)
+            try
             {
-                bool isDuplicate = db.Venues.Any(v =>
-                    v.VenueId != venue.VenueId &&
-                    v.VenueName == venue.VenueName &&
-                    v.Location == venue.Location);
-
-                if (isDuplicate)
+                if (ModelState.IsValid)
                 {
-                    ModelState.AddModelError("", "A venue with the same name and location already exists.");
-                }
-                else
-                {
-                    existingVenue.VenueName = venue.VenueName;
-                    existingVenue.Location = venue.Location;
-                    existingVenue.Capacity = venue.Capacity;
+                    // Check if another venue with same name and location exists (except current venue)
+                    bool isDuplicate = db.Venues.Any(v =>
+                        v.VenueId != venue.VenueId &&
+                        v.VenueName == venue.VenueName &&
+                        v.Location == venue.Location);
 
-                    if (ImageFile != null && ImageFile.ContentLength > 0)
+                    if (isDuplicate)
                     {
-                        existingVenue.ImageUrl = GetBlobUrl(ImageFile);
+                        ModelState.AddModelError("", "Another venue with the same name and location already exists.");
                     }
+                    else
+                    {
+                        // Handle image upload if a new image is provided
+                        if (ImageFile != null && ImageFile.ContentLength > 0)
+                        {
+                            venue.ImageUrl = GetBlobUrl(ImageFile);
+                        }
 
-                    db.Entry(existingVenue).State = EntityState.Modified;
-                    db.SaveChanges();
-                    TempData["SuccessMessage"] = "Venue updated successfully.";
-                    return RedirectToAction("Index");
+                        db.Entry(venue).State = EntityState.Modified;
+                        db.SaveChanges();
+                        TempData["SuccessMessage"] = "Venue updated successfully.";
+                        return RedirectToAction("Index");
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "Error updating venue: " + ex.Message);
             }
 
             return View(venue);
@@ -164,19 +193,43 @@ namespace EventEaseDBWebApplication.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult DeleteConfirmed(int id)
         {
-            var venue = db.Venues.Find(id);
+            var venue = db.Venues
+                .Include(v => v.Events)
+                .Include(v => v.Bookings)
+                .FirstOrDefault(v => v.VenueId == id);
+
+            if (venue == null)
+                return HttpNotFound();
 
             try
             {
+                // Prevent deletion if events exist
+                if (venue.Events.Any())
+                {
+                    TempData["DeleteError"] = "Cannot delete venue because it has scheduled events. " +
+                                             "Delete the events first.";
+                    return RedirectToAction("Delete", new { id });
+                }
+
+                // Prevent deletion if bookings exist
+                if (venue.Bookings.Any())
+                {
+                    TempData["DeleteError"] = "Cannot delete venue because it has active bookings. " +
+                                             "Delete the bookings first.";
+                    return RedirectToAction("Delete", new { id });
+                }
+
+                // Safe to delete since no dependencies
                 db.Venues.Remove(venue);
                 db.SaveChanges();
+
                 TempData["SuccessMessage"] = "Venue deleted successfully.";
                 return RedirectToAction("Index");
             }
-            catch (DbUpdateException)
+            catch (Exception ex)
             {
-                TempData["DeleteError"] = "Venue can't be deleted because it is linked to events or bookings.";
-                return RedirectToAction("Delete", new { id = id });
+                TempData["DeleteError"] = "Error deleting venue: " + ex.Message;
+                return RedirectToAction("Delete", new { id });
             }
         }
 

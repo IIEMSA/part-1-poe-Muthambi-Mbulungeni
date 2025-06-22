@@ -9,14 +9,20 @@
 <!-- SUCCESS / ERROR MESSAGES -->
 @if (TempData["SuccessMessage"] != null)
 {
-    <div class="alert alert-success" role="alert">
+    <div class="alert alert-success alert-dismissible" role="alert">
         @TempData["SuccessMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
     </div>
 }
 @if (TempData["DeleteError"] != null)
 {
-    <div class="alert alert-danger" role="alert">
+    <div class="alert alert-danger alert-dismissible" role="alert">
         @TempData["DeleteError"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
     </div>
 }
 
@@ -24,11 +30,20 @@
     @Html.ActionLink("Create New Venue", "Create", null, new { @class = "btn btn-success" })
 </p>
 
+<!-- SEARCH FORM -->
 @using (Html.BeginForm("Index", "Venue", FormMethod.Get))
 {
     <div class="form-group">
-        <input type="text" name="searchTerm" class="form-control" placeholder="Search by name or location" value="@ViewBag.CurrentFilter" />
-        <button type="submit" class="btn btn-primary" style="margin-top: 5px;">Search</button>
+        <div class="input-group">
+            <input type="text" name="searchTerm" class="form-control" placeholder="Search by venue name, location, or capacity..." value="@ViewBag.CurrentFilter" />
+            <div class="input-group-append">
+                <button type="submit" class="btn btn-primary">Search</button>
+                @if (!string.IsNullOrEmpty(ViewBag.CurrentFilter))
+                {
+                    @Html.ActionLink("Clear", "Index", null, new { @class = "btn btn-secondary" })
+                }
+            </div>
+        </div>
     </div>
 }
 
@@ -37,9 +52,9 @@
     <table class="table table-bordered table-striped">
         <thead>
             <tr>
-                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().VenueName)</th>
-                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().Location)</th>
-                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().Capacity)</th>
+                <th>Venue Name</th>
+                <th>Location</th>
+                <th>Capacity</th>
                 <th>Image</th>
                 <th>Actions</th>
             </tr>
@@ -73,5 +88,14 @@
 }
 else
 {
-    <p>No venues found.</p>
+    <div class="alert alert-info">
+        @if (!string.IsNullOrEmpty(ViewBag.CurrentFilter))
+        {
+            <p>No venues found matching "@ViewBag.CurrentFilter".</p>
+        }
+        else
+        {
+            <p>No venues found.</p>
+        }
+    </div>
 }

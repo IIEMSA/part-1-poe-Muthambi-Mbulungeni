@@ -1,37 +1,40 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace EventEaseDBWebApplication.Models
 {
-    using System;
-    using System.Collections.Generic;
-    using System.ComponentModel.DataAnnotations;
-    using System.ComponentModel.DataAnnotations.Schema;
-    using System.Data.Entity.Spatial;
-
     [Table("Event")]
     public partial class Event
     {
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2214:DoNotCallOverridableMethodsInConstructors")]
         public Event()
         {
             Bookings = new HashSet<Booking>();
         }
 
+        [Key]
         public int EventId { get; set; }
 
         [Required]
         [StringLength(100)]
         public string EventName { get; set; }
 
+        [Required(ErrorMessage = "Event date is required.")]
+        [DataType(DataType.Date)]
+        [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
         [Column(TypeName = "date")]
-        public DateTime? EventDate { get; set; }
+        public DateTime EventDate { get; set; }
 
         [StringLength(255)]
         public string Description { get; set; }
 
-        public int? VenueId { get; set; }
+        [Required]
+        public int VenueId { get; set; }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
-        public virtual ICollection<Booking> Bookings { get; set; }
-
+        [ForeignKey("VenueId")]
         public virtual Venue Venue { get; set; }
+
+        public virtual ICollection<Booking> Bookings { get; set; }
     }
 }
